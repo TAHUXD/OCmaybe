@@ -3,7 +3,6 @@ import cv2
 import numpy as np
 from undistort import undistort
 from gps_simulator import joint_estimation_2
-import imutils
 # ----------------------------------------------------------------------------------------------------------
 
 class Image_processes:
@@ -34,21 +33,42 @@ class Image_processes:
         cropped_image2 = self.undistorter.undistort(img[int(width / 2):width, 0:int(height / 2)])
         cropped_image3 = self.undistorter.undistort(img[0:int(width / 2), int(height / 2):height])
         cropped_image4 = self.undistorter.undistort(img[int(width / 2):width, int(height / 2):height])
+        robot_position = -1
 
         images = [cropped_image1, cropped_image2, cropped_image3, cropped_image4]
+        positions = []
         # stitched_img = self.stitcher.main(images)
         # cv2.imshow('stitched images', stitched_img)
-        for img in images:
+        for (index, img) in enumerate(images):
             pos = self.position_estimator.detect_color(img, 'red')
+            positions.append(pos)
             print(pos)
+        
+        if self.robot_present(positions[0]) and self.robot_present(positions[2]):
+            robot_position = positions[0]
+        elif self.robot_present(positions[1]) and self.robot_present(positions[3]):
+            robot_position = positions[1]
+        elif self.robot_present(positions[2]):
+            robot_position = (positions[2])
+            robot_position[0] += 62
+        elif self.robot_present(positions[3]):
+            robot_position = (positions[3])
+            robot_position[0] += 62
+        elif self.robot_present(positions[0]):
+            robot_position = (positions[0])
+        elif self.robot_present(positions[1]):
+            robot_position = (positions[1])
+
         cv2.imshow('image1', cropped_image1)
         cv2.imshow('image2', cropped_image2)
         cv2.imshow('image3', cropped_image3)
         cv2.imshow('image4', cropped_image4)
         c = cv2.waitKey(1)
 
-        return
-
+        return robot_position
+    def robot_present(self, pos):
+        return pos[0] != 0 or pos[1] != 0
+    
     def __imageStitch(self, images):
 
         stitcher = cv2.Stitcher_create() 

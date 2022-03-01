@@ -7,7 +7,7 @@ import rospy
 import cv2
 import numpy as np
 import json
-from std_msgs.msg import String
+from parked_custom_msgs.msg import Point
 from image_manipulation import Image_processes
 
 class image_converter:
@@ -21,7 +21,7 @@ class image_converter:
     # initialize the node named image_processing
     rospy.init_node('GPSVideo_Processor', anonymous=True)
     # initialize a publisher to send xz coordinates
-    self.pos_pub = rospy.Publisher("robot_position", String ,queue_size = 1)
+    self.pos_pub = rospy.Publisher("robot_position", Point ,queue_size = 1)
     
     self.cap = cv2.VideoCapture(0)
     
