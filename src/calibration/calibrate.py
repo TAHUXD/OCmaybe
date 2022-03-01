@@ -2,7 +2,6 @@ import cv2
 print(cv2.__version__)
 import numpy as np
 import os
-import glob
 CHECKERBOARD = (6,9)
 subpix_criteria = (cv2.TERM_CRITERIA_EPS+cv2.TERM_CRITERIA_MAX_ITER, 30, 0.1)
 calibration_flags = cv2.fisheye.CALIB_RECOMPUTE_EXTRINSIC+cv2.fisheye.CALIB_CHECK_COND+cv2.fisheye.CALIB_FIX_SKEW
@@ -13,8 +12,9 @@ objp[0,:,:2] = np.mgrid[0:CHECKERBOARD[0], 0:CHECKERBOARD[1]].T.reshape(-1, 2)
 _img_shape = None
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
-images = glob.glob('*.jpg')
-
+images = []
+for x in range(1, 7):
+    images.append('/afs/inf.ed.ac.uk/user/s18/s1829279/Desktop/sdp/catkin_ws/src/cv_gps_system/src/calibration/image_{}.jpg'.format(x))
 for fname in images:
     img = cv2.imread(fname)
     if _img_shape == None:

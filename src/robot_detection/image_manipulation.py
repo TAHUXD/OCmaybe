@@ -1,17 +1,17 @@
 #!/usr/bin/env python
-
-from imutils import paths
 import cv2
 import numpy as np
+from undistort import undistort
+from gps_simulator import joint_estimation_2
 import imutils
-
-
 # ----------------------------------------------------------------------------------------------------------
 
 class Image_processes:
 
-    def _init_(self):
+    def __init__(self):
         self.calibratred = False
+        self.undistorter = undistort()
+        self.position_estimator = joint_estimation_2()
         return
 
     def runProcessor(self, frame):
@@ -22,83 +22,36 @@ class Image_processes:
 
         img = image
 
-        print(img.shape)  # Print image shape
+        # print(img.shape)  # Print image shape
         cv2.imshow("original", img)
 
         # get original feed dimentions
-        height, width = img.shape[:2]
+        width, height = img.shape[:2]
+     
 
         # Cropping images
-        cropped_image1 = img[0:width / 2, 0:height / 2]
-        cropped_image2 = img[width / 2:width, 0:height / 2]
-        cropped_image3 = img[0:width / 2, height / 2:height]
-        cropped_image4 = img[width / 2:width, height / 2:height]
+        cropped_image1 = self.undistorter.undistort(img[0:int(width / 2), 0:int(height / 2)])
+        cropped_image2 = self.undistorter.undistort(img[int(width / 2):width, 0:int(height / 2)])
+        cropped_image3 = self.undistorter.undistort(img[0:int(width / 2), int(height / 2):height])
+        cropped_image4 = self.undistorter.undistort(img[int(width / 2):width, int(height / 2):height])
 
         images = [cropped_image1, cropped_image2, cropped_image3, cropped_image4]
+        # stitched_img = self.stitcher.main(images)
+        # cv2.imshow('stitched images', stitched_img)
+        for img in images:
+            pos = self.position_estimator.detect_color(img, 'red')
+            print(pos)
+        cv2.imshow('image1', cropped_image1)
+        cv2.imshow('image2', cropped_image2)
+        cv2.imshow('image3', cropped_image3)
+        cv2.imshow('image4', cropped_image4)
+        c = cv2.waitKey(1)
 
-        for i in images:
-            # Display cropped image
-            cv2.imshow("cropped", i)
-            cv2.waitKey(1000)
-            cv2.destroyAllWindows()
-
-        return self.__distortionCorrection(images)
-
-    def __distortionCorrection(self, images):
-
-        # code here to correct lens distortion in 4 images from the camera feed
-        if not self.calibratred:
-
-            # termination criteria
-            criteria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-
-            # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-            objp = np.zeros((6 * 7, 3), np.float32)
-            objp[:, :2] = np.mgrid[0:7, 0:6].T.reshape(-1, 2)
-
-            # Arrays to store object points and image points from all the images.
-            objpoints = []  # 3d point in real world spaceeria = (cv2.TERM_CRITERIA_EPS + cv2.TERM_CRITERIA_MAX_ITER, 30, 0.001)
-            # prepare object points, like (0,0,0), (1,0,0), (2,0,0) ....,(6,5,0)
-            objp = np.zeros((6 * 7, 3), np.float32)
-            objp[:, :2] = np.mgrid[0:7, 0:6].T.reshape(-1, 2)
-
-            # Arrays to store object points and image points from all the images.
-            objpoints = []  # 3d point in real world space
-            imgpoints = []  # 2d points in image plane.
-            images = glob.glob('*.jpg')
-
-            for fname in images:
-                img = cv2.imread(fname)
-                gray = cv2.cvtColor(img, cv2.COLOR_BGR2GRAY)
-                # Find the chess board corners
-                ret, corners = cv2.findChessboardCorners(gray, (7, 6), None)
-                # If found, add object points, image points (after refining them)
-                if ret == True:
-                    objpoints.append(objp)
-                    corners2 = cv2.cornerSubPix(gray, corners, (11, 11), (-1, -1), criteria)
-                    imgpoints.append(corners)
-                    # Draw and display the corners
-                    cv2.drawChessboardCorners(img, (7, 6), corners2, ret)
-                    cv2.imshow('img', img)
-                    cv2.waitKey(500)
-            cv2.destroyAllWindows()
-
-        img = cv2.imread('left12.jpg')
-        h, w = img.shape[:2]
-        newcameramtx, roi = cv2.getOptimalNewCameraMa
-        trix(mtx, dist, (w, h), 1, (w, h))
-        # undistort
-        dst = cv2.undistort(img, mtx, dist, None, newcameramtx)
-        # crop the image
-        x, y, w, h = roi
-        dst = dst[y:y + h, x:x + w]
-        cv2.imwrite('calibresult.png', dst)
-
-        return self.__imageStitch(images)
+        return
 
     def __imageStitch(self, images):
 
-        stitcher = cv2.createStitcher() if imutils.is_cv3() else cv2.Stitcher_create()
+        stitcher = cv2.Stitcher_create() 
         (status, stitched) = stitcher.stitch(images)
 
         stitched = cv2.copyMakeBorder(stitched, 10, 10, 10, 10, cv2.BORDER_CONSTANT, (0, 0, 0))
@@ -147,7 +100,7 @@ class Image_processes:
         # stitched image
         stitched = stitched[y:y + h, x:x + w]
 
-        return self.__colourSpaceCoordinate(image)
+        return self.__colourSpaceCoordinate(stitched)
 
     def __colourSpaceCoordinate(self, image):
 

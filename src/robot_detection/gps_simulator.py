@@ -22,7 +22,7 @@ class joint_estimation_2:
 
         # Colour Ranges to be used for thresholding
         # RED
-        self.RED_BLOB_HSV_COLOR_RANGE_BELOW = (0,50,50)
+        self.RED_BLOB_HSV_COLOR_RANGE_BELOW = (0,110,190)
         self.RED_BLOB_HSV_COLOR_RANGE_UPPER = (20,255,255)
         # GREEN
         self.GREEN_BLOB_HSV_COLOR_RANGE_BELOW = (50,50,50)
@@ -56,7 +56,7 @@ class joint_estimation_2:
             color_range_upper = self.BLUE_BLOB_HSV_COLOR_RANGE_UPPER
             color_range_below = self.BLUE_BLOB_HSV_COLOR_RANGE_BELOW
         elif(color == "yellow"):
-            color_range_upper = self.YELLOW_BLOB_HSV_COLOR_RANGE_UPPER
+            color_range_upper = self.YELLOW_BLOB_HSV_COLOR_RANGE_UPPERS
             color_range_below = self.YELLOW_BLOB_HSV_COLOR_RANGE_BELOW
         elif (color == 'green'):
             color_range_upper = self.GREEN_BLOB_HSV_COLOR_RANGE_UPPER
@@ -78,6 +78,7 @@ class joint_estimation_2:
         # This applies a dilate that makes the binary region larger (the more iterations the larger it becomes)
         kernel = np.ones((5, 5), np.uint8)
         yz_mask = cv2.dilate(yz_mask, kernel, iterations=3)
+        cv2.imshow('hsv', yz_mask)
         # Obtain the moments of the binary image
         M = cv2.moments(yz_mask)
         # Calculate pixel coordinates for the centre of the blob
@@ -86,8 +87,8 @@ class joint_estimation_2:
         m01 = M['m01']
         # small area determines if this blob is visible
         small_area = False
-        if m00 < 100000:
-            print("Small moment!")
+        if m00 < 1000000:
+            # print("Small moment!")
             small_area = True
 
         if m00 == 0:
@@ -112,16 +113,3 @@ class joint_estimation_2:
         image_with_centers = cv2.circle(image_with_centers, (int(circle4Pos_img[1]), int(circle4Pos_img[3])), 2, (255, 255, 255), cv2.FILLED)
 
         cv2.imshow('Images with blob centers YZ', cv2.resize(image_with_centers, (400,400)))
-    
-# call the class
-def main(args):
-    joint_estimation = joint_estimation_2()
-    try:
-        rospy.spin()
-    except KeyboardInterrupt:
-        print("Shutting down")
-    cv2.destroyAllWindows()
-
-# run the code if the node is called
-if __name__ == '__main__':
-    main(sys.argv)
