@@ -13,10 +13,12 @@ _img_shape = None
 objpoints = [] # 3d point in real world space
 imgpoints = [] # 2d points in image plane.
 images = []
-for x in range(1, 7):
-    images.append('/afs/inf.ed.ac.uk/user/s18/s1829279/Desktop/sdp/catkin_ws/src/cv_gps_system/src/calibration/image_{}.jpg'.format(x))
+for x in range(13, 51):
+    images.append('/afs/inf.ed.ac.uk/user/s18/s1829279/Desktop/sdp/catkin_ws/src/cv_gps_system/src/calibration/calibration_images/img_{}.jpg'.format(x))
 for fname in images:
     img = cv2.imread(fname)
+    if img is None:
+        continue
     if _img_shape == None:
         _img_shape = img.shape[:2]
     else:

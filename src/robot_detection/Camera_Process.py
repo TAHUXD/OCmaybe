@@ -9,6 +9,7 @@ import numpy as np
 import json
 from parked_custom_msgs.msg import Point
 from image_manipulation import Image_processes
+from std_msgs.msg import Float64
 
 class image_converter:
 
@@ -33,7 +34,10 @@ class image_converter:
 
         ret, frame = self.cap.read()
         frame = cv2.resize(frame, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
-        self._processor.runProcessor(frame)
+        robot_position = self._processor.runProcessor(frame)
+        print(robot_position)
+        position_in_point = Point(float(robot_position[0]), float(robot_position[1]), -999)
+        self.pos_pub.publish(position_in_point)
         # cv2.imshow('Input', frame)
 
         # c = cv2.waitKey(1)

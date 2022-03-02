@@ -11,6 +11,7 @@ class Image_processes:
         self.calibratred = False
         self.undistorter = undistort()
         self.position_estimator = joint_estimation_2()
+        self.i = 0
         return
 
     def runProcessor(self, frame):
@@ -20,9 +21,12 @@ class Image_processes:
     def __imageSegmentation(self, image):
 
         img = image
-
+        # cv2.imwrite(("img_" +str(self.i)+ '.jpg'), img)
+        # self.i+=1
         # print(img.shape)  # Print image shape
         cv2.imshow("original", img)
+       
+
 
         # get original feed dimentions
         width, height = img.shape[:2]
@@ -33,7 +37,7 @@ class Image_processes:
         cropped_image2 = self.undistorter.undistort(img[int(width / 2):width, 0:int(height / 2)])
         cropped_image3 = self.undistorter.undistort(img[0:int(width / 2), int(height / 2):height])
         cropped_image4 = self.undistorter.undistort(img[int(width / 2):width, int(height / 2):height])
-        robot_position = -1
+        robot_position = [-1,-1]
 
         images = [cropped_image1, cropped_image2, cropped_image3, cropped_image4]
         positions = []
@@ -42,20 +46,29 @@ class Image_processes:
         for (index, img) in enumerate(images):
             pos = self.position_estimator.detect_color(img, 'red')
             positions.append(pos)
-            print(pos)
-        
-        if self.robot_present(positions[0]) and self.robot_present(positions[2]):
+            # print(pos)
+
+        # position 1
+        if self.robot_present(positions[0]):
+            robot_position = positions[0]
+        # position 2
+        elif self.robot_present(positions[1]):
+            robot_position = positions[1]
+            robot_position[1] += 300
+        elif self.robot_present(positions[0]) and self.robot_present(positions[2]):
             robot_position = positions[0]
         elif self.robot_present(positions[1]) and self.robot_present(positions[3]):
             robot_position = positions[1]
         elif self.robot_present(positions[2]):
             robot_position = (positions[2])
-            robot_position[0] += 62
+            robot_position[0] += (62 + 480)
+            robot_position[1] += 300
         elif self.robot_present(positions[3]):
             robot_position = (positions[3])
-            robot_position[0] += 62
+            robot_position[0] += (62 + 480)
         elif self.robot_present(positions[0]):
             robot_position = (positions[0])
+            robot_position[1] += 300
         elif self.robot_present(positions[1]):
             robot_position = (positions[1])
 
@@ -66,6 +79,8 @@ class Image_processes:
         c = cv2.waitKey(1)
 
         return robot_position
+
+
     def robot_present(self, pos):
         return pos[0] != 0 or pos[1] != 0
     

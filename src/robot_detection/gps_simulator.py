@@ -22,7 +22,7 @@ class joint_estimation_2:
 
         # Colour Ranges to be used for thresholding
         # RED
-        self.RED_BLOB_HSV_COLOR_RANGE_BELOW = (0,110,190)
+        self.RED_BLOB_HSV_COLOR_RANGE_BELOW = (0,110,210)
         self.RED_BLOB_HSV_COLOR_RANGE_UPPER = (20,255,255)
         # GREEN
         self.GREEN_BLOB_HSV_COLOR_RANGE_BELOW = (50,50,50)
