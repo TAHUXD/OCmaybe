@@ -37,6 +37,7 @@ class image_converter:
         robot_position = self._processor.runProcessor(frame)
         # print(robot_position)
         position_in_point = Point(float(robot_position[0]), float(robot_position[1]), -999)
+        print(position_in_point)
         self.pos_pub.publish(position_in_point)
         # cv2.imshow('Input', frame)
 
