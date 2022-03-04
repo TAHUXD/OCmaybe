@@ -50,6 +50,7 @@ class Image_processes:
         pos = self.position_estimator.detect_color(vis, 'red')
         print(pos)
         cv2.imshow('gps', vis)
+        # print(vis.shape)
         cv2.waitKey(4)
 
         return pos
