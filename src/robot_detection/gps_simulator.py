@@ -34,7 +34,7 @@ class joint_estimation_2:
         self.YELLOW_BLOB_HSV_COLOR_RANGE_BELOW = (20,50,50)
         self.YELLOW_BLOB_HSV_COLOR_RANGE_UPPER = (40,255,255)
 
-
+        
     # Calculate the conversion from pixel to meter
     def pixel2meter(self,image):
         # Obtain the centre of each coloured blob

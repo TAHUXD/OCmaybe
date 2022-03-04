@@ -24,118 +24,64 @@ class Image_processes:
         # cv2.imwrite(("img_" +str(self.i)+ '.jpg'), img)
         # self.i+=1
         # print(img.shape)  # Print image shape
-        cv2.imshow("original", img)
+        # cv2.imshow("original", img)
        
 
 
         # get original feed dimentions
         width, height = img.shape[:2]
-     
-
+    
         # Cropping images
         cropped_image1 = self.undistorter.undistort(img[0:int(width / 2), 0:int(height / 2)])
         cropped_image2 = self.undistorter.undistort(img[int(width / 2):width, 0:int(height / 2)])
         cropped_image3 = self.undistorter.undistort(img[0:int(width / 2), int(height / 2):height])
         cropped_image4 = self.undistorter.undistort(img[int(width / 2):width, int(height / 2):height])
-        robot_position = [-1,-1]
-
+        
         images = [cropped_image1, cropped_image2, cropped_image3, cropped_image4]
-        positions = []
-        # stitched_img = self.stitcher.main(images)
-        # cv2.imshow('stitched images', stitched_img)
-        for (index, img) in enumerate(images):
-            pos = self.position_estimator.detect_color(img, 'red')
-            positions.append(pos)
-            # print(pos)
+        
+        # cv2.imshow('image1', cropped_image1)
+        # cv2.imshow('image2', cropped_image2)
+        # cv2.imshow('image3', cropped_image3)
+        # cv2.imshow('image4', cropped_image4)
+        
 
-        # position 1
-        if self.robot_present(positions[0]):
-            robot_position = positions[0]
-        # position 2
-        elif self.robot_present(positions[1]):
-            robot_position = positions[1]
-            robot_position[1] += 300
-        elif self.robot_present(positions[0]) and self.robot_present(positions[2]):
-            robot_position = positions[0]
-        elif self.robot_present(positions[1]) and self.robot_present(positions[3]):
-            robot_position = positions[1]
-        elif self.robot_present(positions[2]):
-            robot_position = (positions[2])
-            robot_position[0] += (62 + 480)
-            robot_position[1] += 300
-        elif self.robot_present(positions[3]):
-            robot_position = (positions[3])
-            robot_position[0] += (62 + 480)
-        elif self.robot_present(positions[0]):
-            robot_position = (positions[0])
-            robot_position[1] += 300
-        elif self.robot_present(positions[1]):
-            robot_position = (positions[1])
+        vis = self.__imageStitch(images)
+        position = []
+        pos = self.position_estimator.detect_color(vis, 'red')
+        print(pos)
+        cv2.imshow('gps', vis)
+        cv2.waitKey(4)
 
-        cv2.imshow('image1', cropped_image1)
-        cv2.imshow('image2', cropped_image2)
-        cv2.imshow('image3', cropped_image3)
-        cv2.imshow('image4', cropped_image4)
-        c = cv2.waitKey(1)
-
-        return robot_position
-
+        return pos
 
     def robot_present(self, pos):
         return pos[0] != 0 or pos[1] != 0
     
     def __imageStitch(self, images):
 
-        stitcher = cv2.Stitcher_create() 
-        (status, stitched) = stitcher.stitch(images)
+        #top two
+        h1, w1 = images[0].shape[:2]
+        h2, w2 = images[2].shape[:2]
 
-        stitched = cv2.copyMakeBorder(stitched, 10, 10, 10, 10, cv2.BORDER_CONSTANT, (0, 0, 0))
+        #create empty matrix
+        vis = np.zeros((h1+h2, w1+w2,3), np.uint8)
 
-        # convert the stitched image to grayscale and threshold it
-        # such that all pixels greater than zero are set to 255
-        # (foreground) while all others remain 0 (background)
+        #top left
+        vis[5:h1+5, 10:w1] = images[0][:600, 10:960]
 
-        gray = cv2.cvtColor(stitched, cv2.COLOR_BGR2GRAY)
-        thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY)[1]
+        #top right
+        vis[:h1, w1-70:w1+w2-160] = images[2][:600, 90:960]
 
-        # the *largest* contour which will be the contour/outline of
-        # the stitched image
-        cnts = cv2.findContours(thresh, cv2.RETR_EXTERNAL,
-                                cv2.CHAIN_APPROX_SIMPLE)
-        cnts = imutils.grab_contours(cnts)
-        c = max(cnts, key=cv2.contourArea)
+        #bottom left
+        vis[h1-70:h1+h2-110, :w1-30] = images[1][40:600, 30:960]
 
-        # allocate memory for the mask which will contain the
-        # rectangular bounding box of the stitched image region
-        mask = np.zeros(thresh.shape, dtype="uint8")
-        (x, y, w, h) = cv2.boundingRect(c)
-        cv2.rectangle(mask, (x, y), (x + w, y + h), 255, -1)
+        #bottom right
+        vis[h1-70:h1+h2-100, w1-140:w1+w2-150] = images[3][30:600, 10:960]
 
-        minRect = mask.copy()
-        sub = mask.copy()
+        # cv2.imshow("combined4",vis)
+        # cv2.waitKey(0)
 
-        # keep looping until there are no non-zero pixels left in the
-        # subtracted image
-        while cv2.countNonZero(sub) > 0:
-            # erode the minimum rectangular mask and then subtract
-            # the thresholded image from the minimum rectangular mask
-            # so we can count if there are any non-zero pixels left
-            minRect = cv2.erode(minRect, None)
-            sub = cv2.subtract(minRect, thresh)
-
-        # find contours in the minimum rectangular mask and then
-        # extract the bounding box (x, y)-coordinates
-
-        cnts = cv2.findContours(minRect.copy(), cv2.RETR_EXTERNAL,
-                                cv2.CHAIN_APPROX_SIMPLE)
-        cnts = imutils.grab_contours(cnts)
-        c = max(cnts, key=cv2.contourArea)
-        (x, y, w, h) = cv2.boundingRect(c)
-        # use the bounding box coordinates to extract the our final
-        # stitched image
-        stitched = stitched[y:y + h, x:x + w]
-
-        return self.__colourSpaceCoordinate(stitched)
+        return vis[100:1050, 450:1650]
 
     def __colourSpaceCoordinate(self, image):
 

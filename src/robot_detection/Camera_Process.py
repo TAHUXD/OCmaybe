@@ -22,7 +22,7 @@ class image_converter:
     # initialize the node named image_processing
     rospy.init_node('GPSVideo_Processor', anonymous=True)
     # initialize a publisher to send xz coordinates
-    self.pos_pub = rospy.Publisher("robot_position", Point ,queue_size = 1)
+    self.pos_pub = rospy.Publisher("/robot_position", Point ,queue_size = 1)
     
     self.cap = cv2.VideoCapture(0)
     
@@ -33,9 +33,9 @@ class image_converter:
         rate.sleep()
 
         ret, frame = self.cap.read()
-        frame = cv2.resize(frame, None, fx=0.5, fy=0.5, interpolation=cv2.INTER_AREA)
+        frame = cv2.resize(frame, None, fx=1, fy=1, interpolation=cv2.INTER_AREA)
         robot_position = self._processor.runProcessor(frame)
-        print(robot_position)
+        # print(robot_position)
         position_in_point = Point(float(robot_position[0]), float(robot_position[1]), -999)
         self.pos_pub.publish(position_in_point)
         # cv2.imshow('Input', frame)
