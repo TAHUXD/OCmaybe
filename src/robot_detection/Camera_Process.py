@@ -1,5 +1,6 @@
 #!/usr/bin/env python
 
+import queue
 from typing import Dict
 import roslib
 import sys
@@ -23,6 +24,7 @@ class image_converter:
     rospy.init_node('GPSVideo_Processor', anonymous=True)
     # initialize a publisher to send xz coordinates
     self.pos_pub = rospy.Publisher("/robot_position", Point ,queue_size = 1)
+    self.pos_pub_longlat = rospy.Publisher('/robot_position_longlat', Point, queue_size=1) #TODO: impletement this
     
     self.cap = cv2.VideoCapture(0)
     
