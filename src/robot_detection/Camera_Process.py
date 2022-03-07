@@ -36,6 +36,7 @@ class image_converter:
 
         ret, frame = self.cap.read()
         frame = cv2.resize(frame, None, fx=1, fy=1, interpolation=cv2.INTER_AREA)
+        cv2.imwrite('camera_input.jpg', frame)
         robot_position = self._processor.runProcessor(frame)
         # print(robot_position)
         position_in_point = Point(float(robot_position[0]), float(robot_position[1]), -999)

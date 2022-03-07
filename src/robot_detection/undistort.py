@@ -2,7 +2,8 @@ import cv2
 import sys
 import numpy as np
 # You should replace these 3 lines with the output in calibration step
-DIM=(960, 600)
+DIM=(960, 540)
+# DIM=(960, 600)
 K=np.array([[681.5626572119695, 0.0, 473.4431157496566], [0.0, 747.6024248469107, 300.84410910303563], [0.0, 0.0, 1.0]])
 D=np.array([[-0.0910103495626607], [-0.12756310131759943], [0.2554180202614854], [-0.25239505058392225]])
 # DIM=(480, 300)
@@ -15,7 +16,7 @@ class undistort(object):
         print ('undistort running')
 
     def undistort(self, img, balance=0.0, dim2=(960, 600), dim3=(960, 600)):    
-        dim1 = img.shape[:2][::-1]  #dim1 is the dimension of input image to un-distort   
+        dim1 = img.shape[:2][::-1]  #dim1 is the dimension of input image to un-distort  
         assert dim1[0]/dim1[1] == DIM[0]/DIM[1], "Image to undistort needs to have same aspect ratio as the ones used in calibration"    
         if not dim2:
             dim2 = dim1    
