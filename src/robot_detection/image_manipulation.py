@@ -46,14 +46,42 @@ class Image_processes:
         
 
         vis = self.__imageStitch(images)
+        # print(vis.shape)
         position = []
         pos = self.position_estimator.detect_color(vis, 'red')
+        pos_blue = self.position_estimator.detect_color(vis, 'blue')
+
+        angle = self.calculate_angle(pos, pos_blue)
+
+        
         print(pos)
         cv2.imshow('gps', vis)
         # print(vis.shape)
         cv2.waitKey(4)
 
-        return pos
+        return pos, angle
+    
+    def calculate_angle(self, pos_red, pos_blue):
+        red_x = pos_red[0]
+        red_y = pos_red[1]
+
+        blue_x = pos_blue[0]
+        blue_y = pos_blue[1]
+        
+
+        vector_1 = [1, 0]
+        vector_2 = pos_blue - pos_red
+
+        unit_vector_1 = vector_1 / np.linalg.norm(vector_1)
+        unit_vector_2 = vector_2 / np.linalg.norm(vector_2)
+        dot_product = np.dot(unit_vector_2, unit_vector_1)
+        angle = np.arccos(dot_product)
+
+        if red_y < blue_y:
+            angle = 2*np.pi - angle
+        return np.rad2deg(angle)
+
+        
 
     def robot_present(self, pos):
         return pos[0] != 0 or pos[1] != 0

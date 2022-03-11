@@ -28,8 +28,8 @@ class joint_estimation_2:
         self.GREEN_BLOB_HSV_COLOR_RANGE_BELOW = (50,50,50)
         self.GREEN_BLOB_HSV_COLOR_RANGE_UPPER = (70,255,255)
         # BLUE
-        self.BLUE_BLOB_HSV_COLOR_RANGE_UPPER = (130,255,255)
-        self.BLUE_BLOB_HSV_COLOR_RANGE_BELOW = (110,50,50)
+        self.BLUE_BLOB_HSV_COLOR_RANGE_UPPER = (118,255,255)
+        self.BLUE_BLOB_HSV_COLOR_RANGE_BELOW = (110,148,160)
         # YELLOW
         self.YELLOW_BLOB_HSV_COLOR_RANGE_BELOW = (20,50,50)
         self.YELLOW_BLOB_HSV_COLOR_RANGE_UPPER = (40,255,255)
@@ -78,7 +78,7 @@ class joint_estimation_2:
         # This applies a dilate that makes the binary region larger (the more iterations the larger it becomes)
         kernel = np.ones((5, 5), np.uint8)
         yz_mask = cv2.dilate(yz_mask, kernel, iterations=3)
-        cv2.imshow('hsv', yz_mask)
+        cv2.imshow('hsv' + str(color_range_below[0]), yz_mask)
         # Obtain the moments of the binary image
         M = cv2.moments(yz_mask)
         # Calculate pixel coordinates for the centre of the blob
