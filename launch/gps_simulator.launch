@@ -1,0 +1,3 @@
+<launch>
+<node name="GPSVideo_Processor" pkg="cv_gps_system" type="gps_simulator.py"></node>
+</launch>

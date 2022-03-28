@@ -1,115 +1,88 @@
-#!/usr/bin/env python3
+#!/usr/bin/env python
+
+import queue
+from typing import Dict
+import roslib
 import sys
+import rospy
 import cv2
 import numpy as np
-import math
+import json
+from parked_custom_msgs.msg import Point
+from image_processor import Image_processor
+from std_msgs.msg import Float64
 
+# Provides an entry into the gps simulator.
+# Process flow:
+#   Fetches merged camera stream from the local network.
+#   Divides the stream into respective camera streams.
+#   Corrects for distortion.
+#   stitches the feeds together to form a comprehensive image of the space.
+#   Detects the robot and reports its position and orientation.
+class GPS_SIMULATOR:
 
-class joint_estimation_2:
-    def __init__(self):
+  # Defines publisher and subscriber
+  def __init__(self):
+    # constants for conversions between the world frame and the system's frame.
+    self.LAT_MIN = 0.0
+    self.LAT_MAX = 1.2631578947
+    self.LONG_MIN = 0.0
+    self.LONG_MAX = 1.0
+    self.IMAGE_Y = 950
+    self.IMAGE_X = 1200
 
-        self.x_axis = np.array([1, 0, 0])
-        self.y_axis = np.array([0, 1, 0])
-        self.z_axis = np.array([0, 0, 1])
+    self.robotPosition = None
+    # initialize a Processor to perform the required process flow.
+    self._processor = Image_processor()
+    # initialize the node named image_processing
+    rospy.init_node('GPSVideo_Processor', anonymous=True)
+    # initialize a publisher to send robot coordinates in the system's frame.
+    self.pos_pub = rospy.Publisher("/robot_position", Point ,queue_size = 1)
+    # initialize a publisher to send robot coordinates in the world frame.
+    self.pos_pub_longlat = rospy.Publisher('/robot_position_longlat', Point, queue_size=1)
 
-        # Last known configuration of the system. Initially empty
-        # index 0: ja1, index 1: ja3, index2: ja4
-        self.last_known_ja = [0,0,0]
+    self.cap = cv2.VideoCapture(0)
+    
+    rate = rospy.Rate(4)
+   
+    while not rospy.is_shutdown():
+        
+        rate.sleep()
 
-        # number of times we have not allowed the angle to change
-        # index 0: ja1, index1: ja3, and index 2: ja4
-        self.buffer_graph_smoothing = [0, 0, 0]
+        ret, frame = self.cap.read()
+        frame = cv2.resize(frame, None, fx=1, fy=1, interpolation=cv2.INTER_AREA)
+        cv2.imwrite('camera_input.jpg', frame)
 
-        # Colour Ranges to be used for thresholding
-        # RED
-        self.RED_BLOB_HSV_COLOR_RANGE_BELOW = (0,110,172)
-        self.RED_BLOB_HSV_COLOR_RANGE_UPPER = (6,255,255)
-        # GREEN
-        self.GREEN_BLOB_HSV_COLOR_RANGE_BELOW = (50,50,50)
-        self.GREEN_BLOB_HSV_COLOR_RANGE_UPPER = (70,255,255)
-        # BLUE
-        self.BLUE_BLOB_HSV_COLOR_RANGE_UPPER = (118,255,255)
-        self.BLUE_BLOB_HSV_COLOR_RANGE_BELOW = (110,148,160)
-        # YELLOW
-        self.YELLOW_BLOB_HSV_COLOR_RANGE_BELOW = (20,50,50)
-        self.YELLOW_BLOB_HSV_COLOR_RANGE_UPPER = (40,255,255)
+        robot_position, angle = self._processor.runProcessor(frame)
+        position_in_point = Point(float(robot_position[1]), float(robot_position[0]), angle)
+        # print(position_in_point)
+
+        change_in_Long = self.LONG_MAX - self.LONG_MIN
+        change_in_lat = self.LAT_MAX - self.LAT_MIN
+        long_conversion_constant = change_in_Long / self.IMAGE_Y
+        lat_conversion_constant = change_in_lat / self.IMAGE_X
+        point_to_convert = position_in_point
+        point_to_convert.long = long_conversion_constant * point_to_convert.long
+        point_to_convert.lat = lat_conversion_constant * point_to_convert.lat
+
+        self.pos_pub.publish(position_in_point)
+        self.pos_pub_longlat.publish(point_to_convert)
+        print(point_to_convert)
+
+    cap.release()
+    cv2.destroyAllWindows()
 
         
-    # Calculate the conversion from pixel to meter
-    def pixel2meter(self,image):
-        # Obtain the centre of each coloured blob
-        circle1Pos, _ = self.detect_color(self.yz_image, self.xz_image, "yellow")
-        circle2Pos, _ = self.detect_color(self.yz_image, self.xz_image, "green")
-        # find the distance between two circles
-        dist = np.sum((circle1Pos[0:3] - circle2Pos[0:3])**2)
-        return self.link_lengths["link_1"] / np.sqrt(dist)
-        
 
-      # Returns the position and visibility of a given coloured blob from given two images
-    def detect_color(self, image, color):
-        color_range_upper = 0
-        color_range_below = 0
-        if (color == "red"):
-            color_range_upper = self.RED_BLOB_HSV_COLOR_RANGE_UPPER
-            color_range_below = self.RED_BLOB_HSV_COLOR_RANGE_BELOW
-        elif (color == "blue"):
-            color_range_upper = self.BLUE_BLOB_HSV_COLOR_RANGE_UPPER
-            color_range_below = self.BLUE_BLOB_HSV_COLOR_RANGE_BELOW
-        elif(color == "yellow"):
-            color_range_upper = self.YELLOW_BLOB_HSV_COLOR_RANGE_UPPERS
-            color_range_below = self.YELLOW_BLOB_HSV_COLOR_RANGE_BELOW
-        elif (color == 'green'):
-            color_range_upper = self.GREEN_BLOB_HSV_COLOR_RANGE_UPPER
-            color_range_below = self.GREEN_BLOB_HSV_COLOR_RANGE_BELOW
+# call the class
+def main(args):
+  gs = GPS_SIMULATOR()
+  try:
+    rospy.spin()
+  except KeyboardInterrupt:
+    print("Shutting down")
+  cv2.destroyAllWindows()
 
-    
-        (x, y), small_area_yz = self.find_moments(image, color_range_below, color_range_upper)
-
-        return np.array([x, y])
-    
-
-    # Calculates and returns the position and visibility of a coloured blob in a given image based on the given threshold
-    # Makes use of hue, saturation, and value in hsv space to calculate required properties.
-    # Appropriate values of hue, saturation, and value for different coloured blobs are determined using the 
-    # python file hsv_color_finder.py in this package.
-    def find_moments(self, image, color_range_below, color_range_upper):
-        hsv_image = cv2.cvtColor(image, cv2.COLOR_BGR2HSV)
-        yz_mask = cv2.inRange(hsv_image, color_range_below, color_range_upper)
-        # This applies a dilate that makes the binary region larger (the more iterations the larger it becomes)
-        kernel = np.ones((5, 5), np.uint8)
-        yz_mask = cv2.dilate(yz_mask, kernel, iterations=3)
-        cv2.imshow('hsv' + str(color_range_below[0]), yz_mask)
-        # Obtain the moments of the binary image
-        M = cv2.moments(yz_mask)
-        # Calculate pixel coordinates for the centre of the blob
-        m10 = M['m10']
-        m00 = M['m00']
-        m01 = M['m01']
-        # small area determines if this blob is visible
-        small_area = False
-        if m00 < 1000000:
-            # print("Small moment!")
-            small_area = True
-
-        if m00 == 0:
-            m00 = 0.000001
-
-        return ((int(m10 / m00), int(m01 / m00)), small_area)
-    
-
-    # Draws white circles on the blobs which reftlect the corresponding position of each blob calculated by the algorithm. 
-    # Mainly used for debugging
-    def draw_circles_on_blobs(self, circle1Pos_img, circle2Pos_img, circle3Pos_img, circle4Pos_img):
-        image_with_centers = cv2.circle(self.xz_image, (int(circle1Pos_img[0]), int(circle1Pos_img[2])), 2, (255, 255, 255), cv2.FILLED)
-        image_with_centers = cv2.circle(image_with_centers, (int(circle2Pos_img[0]), int(circle2Pos_img[2])), 2, (255, 255, 255), cv2.FILLED)
-        image_with_centers = cv2.circle(image_with_centers, (int(circle3Pos_img[0]), int(circle3Pos_img[2])), 2, (255, 255, 255), cv2.FILLED)
-        image_with_centers = cv2.circle(image_with_centers, (int(circle4Pos_img[0]), int(circle4Pos_img[2])), 2, (255, 255, 255), cv2.FILLED)
-
-        cv2.imshow('Images with blob centers XZ', cv2.resize(image_with_centers, (400,400)))
-
-        image_with_centers = cv2.circle(self.yz_image, (int(circle1Pos_img[1]), int(circle1Pos_img[3])), 2, (255, 255, 255), cv2.FILLED)
-        image_with_centers = cv2.circle(image_with_centers, (int(circle2Pos_img[1]), int(circle2Pos_img[3])), 2, (255, 255, 255), cv2.FILLED)
-        image_with_centers = cv2.circle(image_with_centers, (int(circle3Pos_img[1]), int(circle3Pos_img[3])), 2, (255, 255, 255), cv2.FILLED)
-        image_with_centers = cv2.circle(image_with_centers, (int(circle4Pos_img[1]), int(circle4Pos_img[3])), 2, (255, 255, 255), cv2.FILLED)
-
-        cv2.imshow('Images with blob centers YZ', cv2.resize(image_with_centers, (400,400)))
+# run the code if the node is called
+if __name__ == '__main__':
+    main(sys.argv)

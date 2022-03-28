@@ -2,15 +2,15 @@
 import cv2
 import numpy as np
 from undistort import undistort
-from gps_simulator import joint_estimation_2
+from cv_utils import blob_detector
 # ----------------------------------------------------------------------------------------------------------
 
-class Image_processes:
+class Image_processor:
 
     def __init__(self):
         self.calibratred = False
         self.undistorter = undistort()
-        self.position_estimator = joint_estimation_2()
+        self.position_estimator = blob_detector()
         self.i = 0
         return
 
@@ -55,7 +55,8 @@ class Image_processes:
 
         
         print(pos)
-        cv2.imshow('gps', vis)
+        # cv2.imshow('gps', vis)
+        self.draw_robot_pos(vis, pos, pos_blue, angle)
         # print(vis.shape)
         cv2.waitKey(4)
 
@@ -80,8 +81,16 @@ class Image_processes:
         if red_y < blue_y:
             angle = 2*np.pi - angle
         return np.rad2deg(angle)
-
-        
+ 
+    def draw_robot_pos(self, img, pos1, pos2, angle):
+        image_with_centers = cv2.circle(img, (int(pos1[0]), int(pos1[1])), 10, (255, 255, 255), cv2.FILLED)
+        image_with_centers = cv2.circle(image_with_centers, (int(pos2[0]), int(pos2[1])), 10, (255, 255, 255), cv2.FILLED)
+        image_with_centers = cv2.line(image_with_centers, (pos1[0], pos1[1]), (pos2[0], pos2[1]), (255, 255, 255), 2)
+        # image_with_centers = cv2.line(image_with_centers, (pos1[0], pos1[1]), (pos2[0], pos1[1]), (255, 255, 255), 2)
+        image_with_centers = cv2.putText(image_with_centers, 'Angle: ' + str(round(angle, 2)), (50, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        image_with_centers = cv2.putText(image_with_centers, 'Position: ' + str(round(pos1[0], 2)) + ', ' + str(round(pos1[1], 2)), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        cv2.imshow('image with centers', image_with_centers)
+    
 
     def robot_present(self, pos):
         return pos[0] != 0 or pos[1] != 0
