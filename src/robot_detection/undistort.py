@@ -29,6 +29,3 @@ class undistort(object):
         map1, map2 = cv2.fisheye.initUndistortRectifyMap(scaled_K, D, np.eye(3), new_K, dim3, cv2.CV_16SC2)
         undistorted_img = cv2.remap(img, map1, map2, interpolation=cv2.INTER_LINEAR, borderMode=cv2.BORDER_CONSTANT)
         return undistorted_img
-        # cv2.imshow("undistorted", undistorted_img)
-        # cv2.waitKey(0)
-        # cv2.destroyAllWindows()
