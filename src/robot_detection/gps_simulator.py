@@ -11,6 +11,7 @@ import json
 from parked_custom_msgs.msg import Point
 from image_processor import Image_processor
 from std_msgs.msg import Float64
+import copy
 
 # Provides an entry into the gps simulator.
 # Process flow:
@@ -61,10 +62,13 @@ class GPS_SIMULATOR:
         change_in_lat = self.LAT_MAX - self.LAT_MIN
         long_conversion_constant = change_in_Long / self.IMAGE_Y
         lat_conversion_constant = change_in_lat / self.IMAGE_X
-        point_to_convert = position_in_point
+
+        point_to_convert = copy.deepcopy(position_in_point)
+        
         point_to_convert.long = long_conversion_constant * point_to_convert.long
         point_to_convert.lat = lat_conversion_constant * point_to_convert.lat
 
+        #print(position_in_point)
         self.pos_pub.publish(position_in_point)
         self.pos_pub_longlat.publish(point_to_convert)
         print(point_to_convert)
