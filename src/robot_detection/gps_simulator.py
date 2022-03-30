@@ -44,7 +44,7 @@ class GPS_SIMULATOR:
 
     self.cap = cv2.VideoCapture(0)
     
-    rate = rospy.Rate(4)
+    rate = rospy.Rate(30)
    
     while not rospy.is_shutdown():
         
