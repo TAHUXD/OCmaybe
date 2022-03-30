@@ -47,11 +47,17 @@ class Image_processor:
 
         vis = self.__imageStitch(images)
         # print(vis.shape)
+        garbage = False
         position = []
+
         pos = self.position_estimator.detect_color(vis, 'red')
         pos_blue = self.position_estimator.detect_color(vis, 'blue')
-
         angle = self.calculate_angle(pos, pos_blue)
+
+        if pos[0] == 0 and pos[1] == 0:
+            angle = -999
+            pos[0] = -999
+            pos[1] = -999
 
         
         print(pos)
