@@ -46,7 +46,7 @@ class blob_detector:
             color_range_upper = self.BLUE_BLOB_HSV_COLOR_RANGE_UPPER
             color_range_below = self.BLUE_BLOB_HSV_COLOR_RANGE_BELOW
         elif(color == "yellow"):
-            color_range_upper = self.YELLOW_BLOB_HSV_COLOR_RANGE_UPPERS
+            color_range_upper = self.YELLOW_BLOB_HSV_COLOR_RANGE_UPPER
             color_range_below = self.YELLOW_BLOB_HSV_COLOR_RANGE_BELOW
         elif (color == 'green'):
             color_range_upper = self.GREEN_BLOB_HSV_COLOR_RANGE_UPPER
