@@ -2,8 +2,8 @@ import cv2
 import sys
 import numpy as np
 # You should replace these 3 lines with the output in calibration step
-DIM=(960, 540)
-# DIM=(960, 600)
+#DIM=(960, 540)
+DIM=(960, 600)
 K=np.array([[681.5626572119695, 0.0, 473.4431157496566], [0.0, 747.6024248469107, 300.84410910303563], [0.0, 0.0, 1.0]])
 D=np.array([[-0.0910103495626607], [-0.12756310131759943], [0.2554180202614854], [-0.25239505058392225]])
 # DIM=(480, 300)

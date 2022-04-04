@@ -50,10 +50,12 @@ class Image_processor:
         # pos_green = self.position_estimator.detect_color('green')
         angle = self.calculate_angle(pos, pos_blue)
 
-        if pos[0] < 5 and pos[1] < 5:
+        if (pos[0] < 5 and pos[1] < 5):
             angle = -999
             pos[0] = -999
             pos[1] = -999
+        elif (pos_blue[0] < 5 and pos_blue[1] < 5):
+            angle = -999
 
         
         print(pos)
@@ -85,13 +87,13 @@ class Image_processor:
         return np.rad2deg(angle)
  
     def draw_robot_pos(self, img, pos1, pos2, angle):
-        # image_with_centers = cv2.circle(img, (int(pos1[0]), int(pos1[1])), 10, (255, 255, 255), cv2.FILLED)
-        # image_with_centers = cv2.circle(image_with_centers, (int(pos2[0]), int(pos2[1])), 10, (255, 255, 255), cv2.FILLED)
-        # image_with_centers = cv2.line(image_with_centers, (pos1[0], pos1[1]), (pos2[0], pos2[1]), (255, 255, 255), 2)
-        # # image_with_centers = cv2.line(image_with_centers, (pos1[0], pos1[1]), (pos2[0], pos1[1]), (255, 255, 255), 2)
-        # image_with_centers = cv2.putText(image_with_centers, 'Angle: ' + str(round(angle, 2)), (50, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        # image_with_centers = cv2.putText(image_with_centers, 'Position: ' + str(round(pos1[0], 2)) + ', ' + str(round(pos1[1], 2)), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
-        cv2.imshow('image with centers', img)
+        image_with_centers = cv2.circle(img, (int(pos1[0]), int(pos1[1])), 10, (255, 255, 255), cv2.FILLED)
+        image_with_centers = cv2.circle(image_with_centers, (int(pos2[0]), int(pos2[1])), 10, (255, 255, 255), cv2.FILLED)
+        image_with_centers = cv2.line(image_with_centers, (pos1[0], pos1[1]), (pos2[0], pos2[1]), (255, 255, 255), 2)
+        # image_with_centers = cv2.line(image_with_centers, (pos1[0], pos1[1]), (pos2[0], pos1[1]), (255, 255, 255), 2)
+        image_with_centers = cv2.putText(image_with_centers, 'Angle: ' + str(round(angle, 2)), (50, 30), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        image_with_centers = cv2.putText(image_with_centers, 'Position: ' + str(round(pos1[0], 2)) + ', ' + str(round(pos1[1], 2)), (50, 50), cv2.FONT_HERSHEY_SIMPLEX, 0.5, (255, 255, 255), 1)
+        cv2.imshow('image with centers', image_with_centers)
     
 
     def robot_present(self, pos):
