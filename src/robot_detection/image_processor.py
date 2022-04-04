@@ -46,8 +46,8 @@ class Image_processor:
 
         pos = self.position_estimator.detect_color(vis, 'red')
         pos_blue = self.position_estimator.detect_color(vis, 'blue')
-        # pos_yellow = self.position_estimator.detect_color(vis, 'yellow')
-        # pos_green = self.position_estimator.detect_color('green')
+        pos_yellow = self.position_estimator.detect_color(vis, 'yellow')
+        pos_green = self.position_estimator.detect_color('green')
         angle = self.calculate_angle(pos, pos_blue)
 
         if (pos[0] < 5 and pos[1] < 5):
@@ -64,7 +64,7 @@ class Image_processor:
         # print(vis.shape)
         cv2.waitKey(4)
 
-        return pos, angle
+        return pos, angle, pos_yellow, pos_green
     
     def calculate_angle(self, pos_red, pos_blue):
         red_x = pos_red[0]
