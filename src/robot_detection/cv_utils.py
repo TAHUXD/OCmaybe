@@ -25,14 +25,14 @@ class blob_detector:
         self.RED_BLOB_HSV_COLOR_RANGE_BELOW = (0,110,172)
         self.RED_BLOB_HSV_COLOR_RANGE_UPPER = (6,255,255)
         # GREEN
-        self.GREEN_BLOB_HSV_COLOR_RANGE_BELOW = (50,50,50)
-        self.GREEN_BLOB_HSV_COLOR_RANGE_UPPER = (70,255,255)
+        self.GREEN_BLOB_HSV_COLOR_RANGE_BELOW = (76,70,110)
+        self.GREEN_BLOB_HSV_COLOR_RANGE_UPPER = (85,255,255)
         # BLUE
         self.BLUE_BLOB_HSV_COLOR_RANGE_UPPER = (118,255,255)
         self.BLUE_BLOB_HSV_COLOR_RANGE_BELOW = (110,148,160)
         # YELLOW
-        self.YELLOW_BLOB_HSV_COLOR_RANGE_BELOW = (20,50,50)
-        self.YELLOW_BLOB_HSV_COLOR_RANGE_UPPER = (40,255,255)
+        self.YELLOW_BLOB_HSV_COLOR_RANGE_BELOW = (20,100,100)
+        self.YELLOW_BLOB_HSV_COLOR_RANGE_UPPER = (30,255,255)
         
 
       # Returns the position and visibility of a given coloured blob from given two images
