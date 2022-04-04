@@ -59,8 +59,8 @@ class GPS_SIMULATOR:
 
         robot_position, angle, position_yellow, position_green = self._processor.runProcessor(frame)
         position_in_point_robot = Point(float(robot_position[1]), float(robot_position[0]), angle)
-        position_in_point_bench2 = Point(float(position_yellow[1]), float(position_yellow[0]), angle)
-        position_in_point_bench3 = Point(float(position_green[1]), float(position_green[0]), angle)
+        position_in_point_bench2 = Point(float(position_yellow[1]), float(position_yellow[0]), 0)
+        position_in_point_bench3 = Point(float(position_green[1]), float(position_green[0]), 0)
         # print(position_in_point)
 
         # change_in_Long = self.LONG_MAX - self.LONG_MIN
