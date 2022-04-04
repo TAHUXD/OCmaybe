@@ -47,7 +47,7 @@ class Image_processor:
         pos = self.position_estimator.detect_color(vis, 'red')
         pos_blue = self.position_estimator.detect_color(vis, 'blue')
         pos_yellow = self.position_estimator.detect_color(vis, 'yellow')
-        pos_green = self.position_estimator.detect_color('green')
+        pos_green = self.position_estimator.detect_color(vis, 'green')
         angle = self.calculate_angle(pos, pos_blue)
 
         if (pos[0] < 5 and pos[1] < 5):
