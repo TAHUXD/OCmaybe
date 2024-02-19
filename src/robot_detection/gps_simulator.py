@@ -3,110 +3,83 @@
 import queue
 from turtle import position
 from typing import Dict
-import roslib
 import sys
-import rospy
+import rclpy  # ROS 2 equivalent for rospy
+from rclpy.node import Node  # ROS 2 way to create a node
 import cv2
 import numpy as np
 import json
-from parked_custom_msgs.msg import Point
-from image_processor import Image_processor
+from geometry_msgs.msg import Point  # ROS 2 standard message type for points
+from image_processor import ImageProcessor  # Assuming Image_processor is a custom class
 from std_msgs.msg import Float64
 import copy
 
-# Provides an entry into the gps simulator.
-# Process flow:
-#   Fetches merged camera stream from the local network.
-#   Divides the stream into respective camera streams.
-#   Corrects for distortion.
-#   stitches the feeds together to form a comprehensive image of the space.
-#   Detects the robot and reports its position and orientation.
-class GPS_SIMULATOR:
+class GPSSimulator(Node):
+    def __init__(self):
+        super().__init__('GPSVideo_Processor')
+        self.LAT_MIN = 0.0
+        self.LAT_MAX = 1.2631578947
+        self.LONG_MIN = 0.0
+        self.LONG_MAX = 1.0
+        self.IMAGE_Y = 950
+        self.IMAGE_X = 1200
 
-  # Defines publisher and subscriber
-  def __init__(self):
-    # constants for conversions between the world frame and the system's frame.
-    self.LAT_MIN = 0.0
-    self.LAT_MAX = 1.2631578947
-    self.LONG_MIN = 0.0
-    self.LONG_MAX = 1.0
-    self.IMAGE_Y = 950
-    self.IMAGE_X = 1200
+        self.robotPosition = None
+        self._processor = ImageProcessor()
 
-    self.robotPosition = None
-    # initialize a Processor to perform the required process flow.
-    self._processor = Image_processor()
-    # initialize the node named image_processing
-    rospy.init_node('GPSVideo_Processor', anonymous=True)
-    # initialize a publisher to send robot coordinates in the system's frame.
-    self.pos_pub = rospy.Publisher("/robot_position", Point ,queue_size = 1)
-    # initialize a publisher to send robot coordinates in the world frame.
-    self.bench2_pub = rospy.Publisher('/bench2_position_longlat', Point, queue_size=1)
-    self.bench3_pub = rospy.Publisher('/bench3_position_longlat', Point, queue_size=1)
-    self.pos_pub_longlat = rospy.Publisher('/robot_position_longlat', Point, queue_size=1)
+        self.pos_pub = self.create_publisher(Point, "/robot_position", 10)
+        self.bench2_pub = self.create_publisher(Point, '/bench2_position_longlat', 10)
+        self.bench3_pub = self.create_publisher(Point, '/bench3_position_longlat', 10)
+        self.pos_pub_longlat = self.create_publisher(Point, '/robot_position_longlat', 10)
 
-    self.cap = cv2.VideoCapture(0)
-    
-    rate = rospy.Rate(30)
-   
-    while not rospy.is_shutdown():
-        
-        rate.sleep()
+        self.cap = cv2.VideoCapture(0)
+        self.timer = self.create_timer(1/30, self.process_video)
 
+    def process_video(self):
         ret, frame = self.cap.read()
+        if not ret:
+            self.get_logger().error('Failed to capture video frame')
+            return
+
         frame = cv2.resize(frame, None, fx=1, fy=1, interpolation=cv2.INTER_AREA)
         cv2.imwrite('camera_input.jpg', frame)
 
         robot_position, angle, position_yellow, position_green = self._processor.runProcessor(frame)
-        position_in_point_robot = Point(float(robot_position[1]), float(robot_position[0]), angle)
-        position_in_point_bench2 = Point(float(position_yellow[1]), float(position_yellow[0]), 0)
-        position_in_point_bench3 = Point(float(position_green[1]), float(position_green[0]), 0)
-        # print(position_in_point)
+        position_in_point_robot = Point(x=float(robot_position[1]), y=float(robot_position[0]), z=angle)
+        position_in_point_bench2 = Point(x=float(position_yellow[1]), y=float(position_yellow[0]), z=0)
+        position_in_point_bench3 = Point(x=float(position_green[1]), y=float(position_green[0]), z=0)
 
-        # change_in_Long = self.LONG_MAX - self.LONG_MIN
-        # change_in_lat = self.LAT_MAX - self.LAT_MIN
-        # long_conversion_constant = change_in_Long / self.IMAGE_Y
-        # lat_conversion_constant = change_in_lat / self.IMAGE_X
-
-        # point_to_convert = copy.deepcopy(position_in_point)
-        
-        # point_to_convert.long = long_conversion_constant * point_to_convert.long
-        # point_to_convert.lat = lat_conversion_constant * point_to_convert.lat
-
-        #print(position_in_point)
         self.pos_pub.publish(position_in_point_robot)
         self.pos_pub_longlat.publish(self.convert_to_longlat(position_in_point_robot))
         self.bench2_pub.publish(self.convert_to_longlat(position_in_point_bench2))
         self.bench3_pub.publish(self.convert_to_longlat(position_in_point_bench3))
-        print(self.convert_to_longlat(position_in_point_robot))
 
-    cap.release()
-    cv2.destroyAllWindows()
-  
-  def convert_to_longlat(self, position_in_point):
-    change_in_Long = self.LONG_MAX - self.LONG_MIN
-    change_in_lat = self.LAT_MAX - self.LAT_MIN
-    long_conversion_constant = change_in_Long / self.IMAGE_Y
-    lat_conversion_constant = change_in_lat / self.IMAGE_X
+    def convert_to_longlat(self, position_in_point):
+        change_in_Long = self.LONG_MAX - self.LONG_MIN
+        change_in_lat = self.LAT_MAX - self.LAT_MIN
+        long_conversion_constant = change_in_Long / self.IMAGE_Y
+        lat_conversion_constant = change_in_lat / self.IMAGE_X
 
-    point_to_convert = copy.deepcopy(position_in_point)
-    
-    point_to_convert.long = long_conversion_constant * point_to_convert.long
-    point_to_convert.lat = lat_conversion_constant * point_to_convert.lat
+        point_to_convert = copy.deepcopy(position_in_point)
+        point_to_convert.x = long_conversion_constant * point_to_convert.x
+        point_to_convert.y = lat_conversion_constant * point_to_convert.y
 
-    return point_to_convert
+        return point_to_convert
 
-        
+def main(args=None):
+    rclpy.init(args=args)
+    gps_simulator = GPSSimulator()
 
-# call the class
-def main(args):
-  gs = GPS_SIMULATOR()
-  try:
-    rospy.spin()
-  except KeyboardInterrupt:
-    print("Shutting down")
-  cv2.destroyAllWindows()
+    try:
+        rclpy.spin(gps_simulator)
+    except KeyboardInterrupt:
+        gps_simulator.get_logger().info('GPS Simulator stopped cleanly')
+    except BaseException:
+        gps_simulator.get_logger().info('Exception in GPS Simulator', exc_info=True)
+    finally:
+        gps_simulator.destroy_node()
+        rclpy.shutdown()
+        cv2.destroyAllWindows()
 
-# run the code if the node is called
 if __name__ == '__main__':
-    main(sys.argv)
+    main()
